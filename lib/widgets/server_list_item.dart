@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cam_star/models/server_device.dart';
+import 'package:cam_star/theme/app_spacing.dart';
+import 'package:cam_star/theme/app_text_styles.dart';
 
-/// A widget that displays a server device in a list
+/// A widget that displays a server device in a card (grid-compatible)
 class ServerListItem extends StatelessWidget {
   /// Creates a server list item
   const ServerListItem({
@@ -22,54 +24,77 @@ class ServerListItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.cast,
-            color: colorScheme.onPrimaryContainer,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          server.name,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              server.address,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Discovered ${server.timeSinceDiscovery}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: colorScheme.onSurfaceVariant,
-        ),
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         onTap: onTap,
+        child: Padding(
+          padding: AppSpacing.paddingMd,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icon Container
+              Row(
+                children: [
+                  Container(
+                    width: AppSpacing.iconLarge,
+                    height: AppSpacing.iconLarge,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: AppSpacing.borderRadiusSmall,
+                    ),
+                    child: Icon(
+                      Icons.cast,
+                      color: colorScheme.onPrimaryContainer,
+                      size: AppSpacing.iconMedium,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: AppSpacing.iconSmall,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              AppSpacing.gapMd,
+
+              // Server Name
+              Text(
+                server.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              AppSpacing.gapXs,
+
+              // Server Address
+              Text(
+                server.address,
+                style: AppTextStyles.monospace.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              AppSpacing.gapXs,
+
+              // Discovery Time
+              Text(
+                'Discovered ${server.timeSinceDiscovery}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

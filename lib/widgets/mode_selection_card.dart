@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cam_star/theme/app_spacing.dart';
 
 /// A reusable card widget for displaying mode selection options
 class ModeSelectionCard extends StatelessWidget {
@@ -29,22 +30,22 @@ class ModeSelectionCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Card(
-      elevation: 2,
       clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: AppSpacing.paddingLg,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Icon
               Icon(
                 icon,
-                size: 64,
+                size: AppSpacing.iconXLarge,
                 color: colorScheme.primary,
               ),
-              const SizedBox(height: 16),
+              AppSpacing.gapMd,
 
               // Title
               Text(
@@ -55,7 +56,7 @@ class ModeSelectionCard extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              AppSpacing.gapSm,
 
               // Description
               Text(
