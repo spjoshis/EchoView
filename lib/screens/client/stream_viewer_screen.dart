@@ -5,6 +5,11 @@ import '../../models/peer_connection_state.dart';
 import '../../models/server_device.dart';
 import '../../providers/stream_viewer_provider.dart';
 import '../../services/webrtc_client_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../widgets/common/state_views.dart';
+import '../../widgets/common/status_badge.dart';
+import '../../widgets/common/app_button.dart';
 
 /// Screen for viewing live video stream from a server
 class StreamViewerScreen extends StatefulWidget {
@@ -23,7 +28,8 @@ class _StreamViewerScreenState extends State<StreamViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => StreamViewerProvider(WebRTCClientService())..initialize(),
+      create: (_) =>
+          StreamViewerProvider(WebRTCClientService())..initialize(),
       child: _StreamViewerContent(server: widget.server),
     );
   }
@@ -62,10 +68,11 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
       await provider.connectToServer(widget.server);
     } catch (e) {
       if (mounted) {
+        final theme = Theme.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to connect: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: theme.colorScheme.error,
             action: SnackBarAction(
               label: 'Retry',
               textColor: Colors.white,
@@ -124,7 +131,7 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
 
                 // Control section
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: AppSpacing.paddingMd,
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest,
                     boxShadow: [
@@ -140,7 +147,7 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _buildConnectionStatus(context, provider),
-                        const SizedBox(height: 16),
+                        AppSpacing.gapMd,
                         _buildControlButtons(context, provider),
                       ],
                     ),
@@ -159,28 +166,28 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
     StreamViewerProvider provider,
   ) {
     // Show different states
-    if (provider.hasError && provider.connectionState == PeerConnectionState.failed) {
-      return _buildErrorView(
-        context,
-        provider.errorMessage ?? 'Connection failed',
+    if (provider.hasError &&
+        provider.connectionState == PeerConnectionState.failed) {
+      return ErrorView(
+        message: provider.errorMessage ?? 'Connection failed',
+        onRetry: _connectToServer,
       );
     }
 
     if (provider.isConnecting || _isConnecting) {
-      return _buildLoadingView(context, 'Connecting to server...');
+      return const LoadingView(message: 'Connecting to server...');
     }
 
     if (provider.connectionState == PeerConnectionState.disconnected) {
-      return _buildPlaceholderView(
-        context,
-        Icons.videocam_off_outlined,
-        'Disconnected',
-        'Tap connect to start streaming',
+      return const PlaceholderView(
+        icon: Icons.videocam_off_outlined,
+        message: 'Disconnected',
+        subtitle: 'Tap connect to start streaming',
       );
     }
 
     if (provider.isConnected && !provider.hasVideoStream) {
-      return _buildLoadingView(context, 'Waiting for video stream...');
+      return const LoadingView(message: 'Waiting for video stream...');
     }
 
     if (provider.hasVideoStream) {
@@ -199,39 +206,12 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
 
             // Connected indicator
             Positioned(
-              top: 16,
-              left: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+              top: AppSpacing.md,
+              left: AppSpacing.md,
+              child: StatusBadge(
+                text: 'LIVE',
+                color: AppColors.connected,
+                showPulse: true,
               ),
             ),
           ],
@@ -239,11 +219,10 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
       );
     }
 
-    return _buildPlaceholderView(
-      context,
-      Icons.videocam_off_outlined,
-      'No Stream',
-      'Waiting for connection',
+    return const PlaceholderView(
+      icon: Icons.videocam_off_outlined,
+      message: 'No Stream',
+      subtitle: 'Waiting for connection',
     );
   }
 
@@ -251,7 +230,9 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
     BuildContext context,
     StreamViewerProvider provider,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final brightness = theme.brightness;
 
     Color statusColor;
     IconData statusIcon;
@@ -269,7 +250,9 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
         statusText = 'Connecting...';
         break;
       case PeerConnectionState.connected:
-        statusColor = Colors.green;
+        statusColor = brightness == Brightness.light
+            ? AppColors.lightSuccess
+            : AppColors.darkSuccess;
         statusIcon = Icons.check_circle;
         statusText = 'Connected';
         break;
@@ -288,8 +271,8 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(statusIcon, color: statusColor, size: 20),
-        const SizedBox(width: 8),
+        Icon(statusIcon, color: statusColor, size: AppSpacing.iconSmall),
+        AppSpacing.gapSm,
         Text(
           statusText,
           style: TextStyle(
@@ -306,117 +289,31 @@ class _StreamViewerContentState extends State<_StreamViewerContent> {
     StreamViewerProvider provider,
   ) {
     if (provider.isConnected) {
-      return FilledButton.icon(
+      return DangerButton(
         onPressed: () async {
           await provider.disconnect();
         },
-        icon: const Icon(Icons.stop),
-        label: const Text('Disconnect'),
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.red,
-          minimumSize: const Size(double.infinity, 48),
-        ),
+        icon: Icons.stop,
+        label: 'Disconnect',
       );
     }
 
     if (provider.connectionState == PeerConnectionState.failed) {
-      return FilledButton.icon(
+      return PrimaryButton(
         onPressed: _connectToServer,
-        icon: const Icon(Icons.refresh),
-        label: const Text('Retry Connection'),
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(double.infinity, 48),
-        ),
+        icon: Icons.refresh,
+        label: 'Retry Connection',
       );
     }
 
     if (provider.connectionState == PeerConnectionState.disconnected) {
-      return FilledButton.icon(
+      return PrimaryButton(
         onPressed: _connectToServer,
-        icon: const Icon(Icons.play_arrow),
-        label: const Text('Connect'),
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(double.infinity, 48),
-        ),
+        icon: Icons.play_arrow,
+        label: 'Connect',
       );
     }
 
     return const SizedBox.shrink();
-  }
-
-  Widget _buildErrorView(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: colorScheme.error,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Connection Error',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colorScheme.error),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingView(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 24),
-          Text(message),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderView(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 80,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(color: colorScheme.onSurfaceVariant),
-          ),
-        ],
-      ),
-    );
   }
 }

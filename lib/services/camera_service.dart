@@ -42,16 +42,41 @@ class CameraService {
         ),
       );
 
-      // Create camera controller
+      // Create camera controller with optimized settings
       _controller = CameraController(
         description,
         _getResolutionPreset(quality),
         enableAudio: false, // Video only for now
         imageFormatGroup: ImageFormatGroup.yuv420,
+        fps: quality.frameRate, // Set explicit frame rate
       );
 
       // Initialize the controller
       await _controller!.initialize();
+
+      // Lock exposure to reduce flicker/jitter
+      try {
+        await _controller!.setExposureMode(ExposureMode.locked);
+      } catch (e) {
+        print('Exposure lock not supported, using auto: $e');
+        try {
+          await _controller!.setExposureMode(ExposureMode.auto);
+        } catch (_) {
+          // Exposure mode not supported at all
+        }
+      }
+
+      // Set focus mode for better stability
+      try {
+        await _controller!.setFocusMode(FocusMode.locked);
+      } catch (e) {
+        print('Focus lock not supported, using auto: $e');
+        try {
+          await _controller!.setFocusMode(FocusMode.auto);
+        } catch (_) {
+          // Focus mode not supported at all
+        }
+      }
     } catch (e) {
       throw CameraException(
         'cameraInitialization',
@@ -111,6 +136,12 @@ class CameraService {
   /// Get the current camera controller (for preview)
   CameraController? get controller => _controller;
 
+  /// Get sensor orientation of current camera
+  int? get sensorOrientation => _controller?.description.sensorOrientation;
+
+  /// Get lens direction of current camera
+  CameraLensDirection? get lensDirection => _controller?.description.lensDirection;
+
   /// Check if camera is initialized
   bool get isInitialized => _controller?.value.isInitialized ?? false;
 
@@ -137,12 +168,12 @@ class CameraService {
   ResolutionPreset _getResolutionPreset(StreamQuality quality) {
     switch (quality) {
       case StreamQuality.low:
-        return ResolutionPreset.medium; // 480p
+        return ResolutionPreset.low; // 240p-360p for smoothest performance
       case StreamQuality.medium:
       case StreamQuality.auto:
-        return ResolutionPreset.high; // 720p
+        return ResolutionPreset.medium; // 480p for balanced performance
       case StreamQuality.high:
-        return ResolutionPreset.veryHigh; // 1080p
+        return ResolutionPreset.high; // 720p
     }
   }
 }

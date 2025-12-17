@@ -22,11 +22,9 @@ class ModeSelectionScreen extends StatelessWidget {
         break;
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => destination,
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => destination));
   }
 
   @override
@@ -44,16 +42,12 @@ class ModeSelectionScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // App Logo/Icon
-                Icon(
-                  Icons.videocam,
-                  size: 80,
-                  color: colorScheme.primary,
-                ),
+                Icon(Icons.videocam, size: 80, color: colorScheme.primary),
                 const SizedBox(height: 16),
 
                 // App Title
                 Text(
-                  'CamStar',
+                  'EchoView',
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,

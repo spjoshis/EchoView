@@ -10,7 +10,7 @@ class CameraProvider extends ChangeNotifier {
 
   List<CameraInfo> _availableCameras = [];
   CameraInfo? _selectedCamera;
-  StreamQuality _quality = StreamQuality.auto;
+  StreamQuality _quality = StreamQuality.medium; // Start with medium for better performance
   bool _isInitializing = false;
   String? _errorMessage;
 
@@ -42,6 +42,18 @@ class CameraProvider extends ChangeNotifier {
 
   /// Get camera description for selected camera
   CameraDescription? get currentCamera => _cameraService.currentCamera;
+
+  /// Get sensor orientation of current camera
+  int? get sensorOrientation => _cameraService.sensorOrientation;
+
+  /// Get lens direction of current camera
+  CameraLensDirection? get lensDirection => _cameraService.lensDirection;
+
+  /// Check if current camera is front camera
+  bool get isFrontCamera => lensDirection == CameraLensDirection.front;
+
+  /// Check if current camera is back camera
+  bool get isBackCamera => lensDirection == CameraLensDirection.back;
 
   /// Load available cameras
   Future<void> loadCameras() async {

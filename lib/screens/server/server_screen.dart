@@ -8,6 +8,13 @@ import '../../services/camera_service.dart';
 import '../../services/server_registration_service.dart';
 import '../../services/signaling_server_service.dart';
 import '../../services/webrtc_server_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../widgets/common/state_views.dart';
+import '../../widgets/common/status_badge.dart';
+import '../../widgets/common/control_panel.dart';
+import '../../widgets/common/app_button.dart';
+import '../../widgets/common/rotated_camera_preview.dart';
 
 /// Server mode screen - broadcasts camera feed to clients
 class ServerScreen extends StatefulWidget {
@@ -67,7 +74,7 @@ class _ServerScreenContent extends StatelessWidget {
 
               // Controls Section
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: AppSpacing.paddingMd,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHighest,
                   boxShadow: [
@@ -82,25 +89,23 @@ class _ServerScreenContent extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Camera Selection
+                      // Camera and Quality Controls
                       if (!broadcastProvider.isBroadcasting)
-                        _buildCameraSelection(context, cameraProvider),
+                        ControlPanel(
+                          title: 'Camera Settings',
+                          children: [
+                            _buildCameraSelection(context, cameraProvider),
+                            AppSpacing.gapMd,
+                            _buildQualitySelection(context, cameraProvider),
+                          ],
+                        ),
 
-                      const SizedBox(height: 12),
-
-                      // Quality Selection
-                      if (!broadcastProvider.isBroadcasting)
-                        _buildQualitySelection(context, cameraProvider),
-
-                      const SizedBox(height: 16),
+                      if (!broadcastProvider.isBroadcasting) AppSpacing.gapMd,
 
                       // Status Display
-                      _buildStatusDisplay(
-                        context,
-                        broadcastProvider,
-                      ),
+                      _buildStatusDisplay(context, broadcastProvider),
 
-                      const SizedBox(height: 16),
+                      AppSpacing.gapMd,
 
                       // Broadcast Button
                       _buildBroadcastButton(
@@ -125,19 +130,18 @@ class _ServerScreenContent extends StatelessWidget {
     BroadcastProvider broadcastProvider,
   ) {
     if (cameraProvider.hasError) {
-      return _buildErrorView(context, cameraProvider.errorMessage!);
+      return ErrorView(message: cameraProvider.errorMessage!);
     }
 
     if (cameraProvider.isInitializing) {
-      return _buildLoadingView(context, 'Initializing camera...');
+      return const LoadingView(message: 'Initializing camera...');
     }
 
     if (!cameraProvider.isInitialized || cameraProvider.controller == null) {
-      return _buildPlaceholderView(
-        context,
-        Icons.videocam_off_outlined,
-        'No Camera Selected',
-        'Select a camera to begin',
+      return const PlaceholderView(
+        icon: Icons.videocam_off_outlined,
+        message: 'No Camera Selected',
+        subtitle: 'Select a camera to begin',
       );
     }
 
@@ -149,64 +153,38 @@ class _ServerScreenContent extends StatelessWidget {
         children: [
           // Camera preview
           Center(
-            child: AspectRatio(
-              aspectRatio: cameraProvider.controller!.value.aspectRatio,
-              child: CameraPreview(cameraProvider.controller!),
+            child: RepaintBoundary(
+              child: RotatedCameraPreview(
+                controller: cameraProvider.controller!,
+              ),
             ),
           ),
 
           // Broadcasting indicator
           if (broadcastProvider.isBroadcasting)
             Positioned(
-              top: 16,
-              left: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+              top: AppSpacing.md,
+              left: AppSpacing.md,
+              child: StatusBadge(
+                text: 'LIVE',
+                color: AppColors.live,
+                showPulse: true,
               ),
             ),
 
           // Viewer count
           if (broadcastProvider.isBroadcasting)
             Positioned(
-              top: 16,
-              right: 16,
+              top: AppSpacing.md,
+              right: AppSpacing.md,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppSpacing.borderRadiusXLarge,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -214,9 +192,9 @@ class _ServerScreenContent extends StatelessWidget {
                     const Icon(
                       Icons.visibility,
                       color: Colors.white,
-                      size: 16,
+                      size: AppSpacing.iconSmall,
                     ),
-                    const SizedBox(width: 8),
+                    AppSpacing.gapSm,
                     Text(
                       '${broadcastProvider.viewerCount}',
                       style: const TextStyle(
@@ -244,8 +222,8 @@ class _ServerScreenContent extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(Icons.videocam, size: 20),
-        const SizedBox(width: 12),
+        const Icon(Icons.videocam, size: AppSpacing.iconSmall),
+        AppSpacing.gapMd,
         Expanded(
           child: DropdownButton<String>(
             value: cameraProvider.selectedCamera?.id,
@@ -280,8 +258,8 @@ class _ServerScreenContent extends StatelessWidget {
   ) {
     return Row(
       children: [
-        Icon(Icons.high_quality, size: 20),
-        const SizedBox(width: 12),
+        const Icon(Icons.high_quality, size: AppSpacing.iconSmall),
+        AppSpacing.gapMd,
         Expanded(
           child: DropdownButton<StreamQuality>(
             value: cameraProvider.quality,
@@ -307,19 +285,20 @@ class _ServerScreenContent extends StatelessWidget {
     BuildContext context,
     BroadcastProvider broadcastProvider,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     if (broadcastProvider.hasError) {
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: AppSpacing.paddingMd,
         decoration: BoxDecoration(
           color: colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppSpacing.borderRadiusSmall,
         ),
         child: Row(
           children: [
             Icon(Icons.error_outline, color: colorScheme.error),
-            const SizedBox(width: 12),
+            AppSpacing.gapMd,
             Expanded(
               child: Text(
                 broadcastProvider.errorMessage!,
@@ -335,8 +314,8 @@ class _ServerScreenContent extends StatelessWidget {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.info_outline, size: 20),
-          const SizedBox(width: 8),
+          const Icon(Icons.info_outline, size: AppSpacing.iconSmall),
+          AppSpacing.gapSm,
           const Text('Ready to broadcast'),
         ],
       );
@@ -348,7 +327,7 @@ class _ServerScreenContent extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.cast, color: colorScheme.primary),
-            const SizedBox(width: 8),
+            AppSpacing.gapSm,
             Text(
               'Broadcasting',
               style: TextStyle(
@@ -358,14 +337,11 @@ class _ServerScreenContent extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        AppSpacing.gapSm,
         Text(
           'Viewers: ${broadcastProvider.viewerCount} | '
           'Clients: ${broadcastProvider.totalClients}',
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).textTheme.bodySmall?.color,
-          ),
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );
@@ -381,20 +357,16 @@ class _ServerScreenContent extends StatelessWidget {
         !broadcastProvider.isBroadcasting;
 
     if (broadcastProvider.isBroadcasting) {
-      return FilledButton.icon(
+      return DangerButton(
         onPressed: () async {
           await broadcastProvider.stopBroadcast();
         },
-        icon: const Icon(Icons.stop),
-        label: const Text('Stop Broadcasting'),
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.red,
-          minimumSize: const Size(double.infinity, 48),
-        ),
+        icon: Icons.stop,
+        label: 'Stop Broadcasting',
       );
     }
 
-    return FilledButton.icon(
+    return PrimaryButton(
       onPressed: canStartBroadcast
           ? () async {
               try {
@@ -405,97 +377,19 @@ class _ServerScreenContent extends StatelessWidget {
                 );
               } catch (e) {
                 if (context.mounted) {
+                  final theme = Theme.of(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Failed to start broadcast: $e'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: theme.colorScheme.error,
                     ),
                   );
                 }
               }
             }
           : null,
-      icon: const Icon(Icons.videocam),
-      label: const Text('Start Broadcasting'),
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(double.infinity, 48),
-      ),
-    );
-  }
-
-  Widget _buildErrorView(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: colorScheme.error,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Error',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colorScheme.error),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingView(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 24),
-          Text(message),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderView(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 80,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(color: colorScheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+      icon: Icons.videocam,
+      label: 'Start Broadcasting',
     );
   }
 }

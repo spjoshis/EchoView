@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:cam_star/providers/server_discovery_provider.dart';
 import 'package:cam_star/widgets/server_list_item.dart';
 import 'package:cam_star/screens/client/stream_viewer_screen.dart';
+import 'package:cam_star/theme/app_spacing.dart';
+import 'package:cam_star/widgets/common/state_views.dart';
+import 'package:cam_star/widgets/common/app_button.dart';
 
 /// Client mode screen - discovers and connects to camera servers
 class ClientScreen extends StatelessWidget {
@@ -55,134 +58,37 @@ class _ClientScreenContent extends StatelessWidget {
         builder: (context, provider, child) {
           // Show error state
           if (provider.state == DiscoveryState.error) {
-            return _buildErrorState(context, provider);
+            return ErrorView(
+              message: provider.errorMessage ?? 'An unknown error occurred',
+              onRetry: provider.refresh,
+            );
           }
 
           // Show empty state if no servers found
           if (provider.servers.isEmpty) {
-            return _buildEmptyState(context, provider);
+            if (provider.isScanning) {
+              return const LoadingView(message: 'Scanning for servers...');
+            }
+            return EmptyView(
+              message: 'No servers found\n\n'
+                  'Make sure:\n'
+                  '• You\'re connected to Wi-Fi\n'
+                  '• A server is running on the same network\n'
+                  '• The server is in Server mode',
+              icon: Icons.search_off,
+              actionLabel: 'Refresh',
+              onAction: provider.refresh,
+            );
           }
 
-          // Show server list
-          return _buildServerList(context, provider);
+          // Show server grid
+          return _buildServerGrid(context, provider);
         },
       ),
     );
   }
 
-  Widget _buildErrorState(
-    BuildContext context,
-    ServerDiscoveryProvider provider,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: colorScheme.error,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Discovery Error',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.error,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.errorMessage ?? 'An unknown error occurred',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: provider.refresh,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(
-    BuildContext context,
-    ServerDiscoveryProvider provider,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (provider.isScanning) ...[
-              const CircularProgressIndicator(),
-              const SizedBox(height: 24),
-              Text(
-                'Scanning for servers...',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'This may take a few seconds',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ] else ...[
-              Icon(
-                Icons.search_off,
-                size: 80,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'No servers found',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Make sure:\n'
-                '• You\'re connected to Wi-Fi\n'
-                '• A server is running on the same network\n'
-                '• The server is in Server mode',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              FilledButton.icon(
-                onPressed: provider.refresh,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Refresh'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildServerList(
+  Widget _buildServerGrid(
     BuildContext context,
     ServerDiscoveryProvider provider,
   ) {
@@ -192,20 +98,21 @@ class _ClientScreenContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header with server count
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: AppSpacing.paddingMd,
           child: Row(
             children: [
               if (provider.isScanning) ...[
                 SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSpacing.iconSmall,
+                  height: AppSpacing.iconSmall,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: colorScheme.primary,
                   ),
                 ),
-                const SizedBox(width: 12),
+                AppSpacing.gapMd,
               ],
               Text(
                 'Found ${provider.servers.length} server(s)',
@@ -216,20 +123,37 @@ class _ClientScreenContent extends StatelessWidget {
             ],
           ),
         ),
+
+        // Server Grid
         Expanded(
-          child: ListView.builder(
-            itemCount: provider.servers.length,
-            itemBuilder: (context, index) {
-              final server = provider.servers[index];
-              return ServerListItem(
-                server: server,
-                onTap: () {
-                  // Navigate to stream viewer screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StreamViewerScreen(server: server),
-                    ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate number of columns based on screen width
+              final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+
+              return GridView.builder(
+                padding: AppSpacing.paddingMd,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: 0.85,
+                  crossAxisSpacing: AppSpacing.md,
+                  mainAxisSpacing: AppSpacing.md,
+                ),
+                itemCount: provider.servers.length,
+                itemBuilder: (context, index) {
+                  final server = provider.servers[index];
+                  return ServerListItem(
+                    server: server,
+                    onTap: () {
+                      // Navigate to stream viewer screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              StreamViewerScreen(server: server),
+                        ),
+                      );
+                    },
                   );
                 },
               );
