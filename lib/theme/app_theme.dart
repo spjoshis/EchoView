@@ -56,13 +56,13 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: AppShadows.elevationLow,
         shape: RoundedRectangleBorder(
           borderRadius: AppSpacing.borderRadiusLarge,
         ),
         color: AppColors.lightSurface,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         margin: EdgeInsets.zero,
       ),
 
@@ -257,13 +257,13 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: AppShadows.elevationLow,
         shape: RoundedRectangleBorder(
           borderRadius: AppSpacing.borderRadiusLarge,
         ),
         color: AppColors.darkSurface,
-        shadowColor: Colors.black.withOpacity(0.3),
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         margin: EdgeInsets.zero,
       ),
 
