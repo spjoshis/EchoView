@@ -118,4 +118,4 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 
 ## 📬 Contact
 
-For questions or support, open an issue or contact the maintainer at [your.email@example.com](mailto:your.email@example.com).
+For questions or support, open an issue or contact the maintainer at [gopal.joshi73@hotmail.com](mailto:gopal.joshi73@hotmail.com).
